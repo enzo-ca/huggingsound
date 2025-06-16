@@ -7,7 +7,6 @@ import warnings
 import logging
 from typing import Optional, Callable
 from datasets import load_from_disk, Dataset
-from tqdm import tqdm
 from transformers import (
     Wav2Vec2Processor, 
     AutoModelForCTC
@@ -78,7 +77,13 @@ class SpeechRecognitionModel():
             self.processor = None
             self.token_set = None
 
-    def transcribe(self, paths: list[str], batch_size: Optional[int] = 1, decoder: Optional[Decoder] = None) -> list[dict]:
+    def transcribe(
+        self,
+        paths: list[str],
+        batch_size: Optional[int] = 1,
+        decoder: Optional[Decoder] = None,
+        use_tqdm: bool = True,
+    ) -> list[dict]:
         """ 
         Transcribe audio files.
 
@@ -115,7 +120,13 @@ class SpeechRecognitionModel():
         sampling_rate = self.processor.feature_extractor.sampling_rate
         result = []
 
-        for paths_batch in tqdm(list(get_chunks(paths, batch_size))):
+        if use_tqdm:
+            from tqdm import tqdm
+            iter_paths = tqdm(list(get_chunks(paths, batch_size)))
+        else:
+            iter_paths = get_chunks(paths, batch_size)
+
+        for paths_batch in iter_paths:
 
             waveforms = get_waveforms(paths_batch, sampling_rate)
 
